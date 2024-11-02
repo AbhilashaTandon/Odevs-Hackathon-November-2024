@@ -20,7 +20,7 @@ FLORIDA_EAST = -80.031111111
 FLORIDA_WEST = -87.635000000
 
 
-def get_tract(lon: float, lat: float) -> Tuple[int, int]:
+def get_tract(lon: float, lat: float) -> int:
     """returns block fips of census tract for given latitude and longitude in florida
 
     Args:
@@ -39,16 +39,14 @@ def get_tract(lon: float, lat: float) -> Tuple[int, int]:
     # print(response)
 
     if (len(response['results']) == 0):
-        return (OCEAN, 0)
+        return OCEAN
     if (int(response['results'][0]['state_fips']) != 12):  # if not florida
-        return (OUTSIDE_FLORIDA, 0)
+        return OUTSIDE_FLORIDA
     else:
         fips = response['results'][0]['block_fips']
         # state = fips[:2]
         # state is always florida
-        county = fips[2:5]
-        tract = fips[5:11]
-        return int(county), int(tract)
+        return int(fips[:11])
         # block fips is 15 digits, is fips of census block
         # first 11 digits are just census tract
 
