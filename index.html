@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster CareHub</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Disaster CareHub</h1>
+    <form id="user-info-form">
+        <label>
+            <input type="checkbox" id="disability"> Disability
+        </label>
+        <label>
+            <input type="checkbox" id="children"> Children
+            <input type="number" id="childrenCount" min="1" placeholder="How many?" disabled>
+        </label>
+        <label>
+            <input type="checkbox" id="pets"> Pets
+            <input type="number" id="petsCount" min="1" placeholder="How many?" disabled>
+        </label>
+        <label>
+            <input type="checkbox" id="elders"> Elders
+            <input type="number" id="eldersCount" min="1" placeholder="How many?" disabled>
+        </label>
+        <label>
+            <input type="checkbox" id="total"> Total # of people
+            <input type="number" id="eldersCount" min="1" placeholder="Total" disabled>
+        </label>
+        <label> <input type="checkbox" id="evacuationRoutes"> Need Evacuation Routes </label> 
+        <button type="button" onclick="submitUserInfo()">Submit</button>
+    </form>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
