@@ -1,3 +1,4 @@
+from collections import Counter
 from PIL import Image
 from typing import Tuple
 from osgeo import gdal
@@ -5,6 +6,7 @@ import matplotlib.pyplot as plt
 from geography import FLORIDA_NORTH, FLORIDA_EAST, FLORIDA_SOUTH, FLORIDA_WEST
 import numpy as np
 from geography import get_tract
+from svi import get_row
 
 
 class GeoTiff:
@@ -13,7 +15,6 @@ class GeoTiff:
         self.transform = self.data_obj.GetGeoTransform()
         self.x_width = self.data_obj.RasterXSize
         self.y_width = self.data_obj.RasterYSize
-        print(self.x_width, self.y_width)
         self.data = self.data_obj.GetRasterBand(1)
 
     def pixel_to_coord(self, x: int, y: int) -> Tuple[float, float]:
@@ -141,7 +142,6 @@ def gen_image():
 
     IMAGE_SIZE = 2000
 
-    storm_risk_data = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
     img = np.ones((IMAGE_SIZE, IMAGE_SIZE, 3)) * 255
 
     color_scale = [[29, 212, 108], [68, 236, 22], [
@@ -153,17 +153,74 @@ def gen_image():
                                       FLORIDA_EAST, FLORIDA_SOUTH, IMAGE_SIZE, IMAGE_SIZE)
         # flood areas are non white pixels
         img[map_data < 255] = color_scale[idx]
+
+
+def get_tract_stats():
+    flood_zones_tracts = {}
+    flood_zones_counties = {}
+
+    import pandas as pd
+
+    svi = pd.read_csv("raw/CDC SVI/Florida.csv")
+
+    for _, row in svi.iterrows():
+        flood_zones_tracts[row['FIPS']] = Counter()
+        flood_zones_counties[row['STCNTY']] = Counter()
+
+    IMAGE_SIZE = 20
+
+    storm_risk_data = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
+
+    for idx, category in enumerate(categories[::-1]):
+        # iterate through them backwards because category 1 is most at risk, so we want to set it last so it isnt overwritten by broader maps
+        map_data = category.get_value(FLORIDA_WEST, FLORIDA_NORTH,
+                                      FLORIDA_EAST, FLORIDA_SOUTH, IMAGE_SIZE, IMAGE_SIZE)
         storm_risk_data[map_data < 255] = idx + 1
 
-    for i in range(IMAGE_SIZE):
-        for j in range(IMAGE_SIZE):
-            lon = FLORIDA_WEST + (FLORIDA_EAST - FLORIDA_WEST)/IMAGE_SIZE * i
-            lat = FLORIDA_NORTH + \
-                (FLORIDA_SOUTH - FLORIDA_NORTH)/IMAGE_SIZE * j
+    from alive_progress import alive_bar
 
-            if (storm_risk_data[i][j] != 0):
-                print(lat, lon, storm_risk_data[i][j])
+    with alive_bar(IMAGE_SIZE * IMAGE_SIZE) as bar:
+        for i in range(IMAGE_SIZE):
+            for j in range(IMAGE_SIZE):
+                bar()
+                lon = FLORIDA_WEST + \
+                    (FLORIDA_EAST - FLORIDA_WEST)/IMAGE_SIZE * i
+                lat = FLORIDA_NORTH + \
+                    (FLORIDA_SOUTH - FLORIDA_NORTH)/IMAGE_SIZE * j
+
+                flood_zone = int(storm_risk_data[j][i])
+                if (flood_zone > 0):
+                    fips = get_tract(lon, lat)
+                    county = fips // 1000000
+                    if (fips > 1 and fips in flood_zones_tracts):
+                        # print(lat, lon, flood_zone, fips)
+                        flood_zones_tracts[fips][flood_zone] += 1
+                        flood_zones_counties[county][flood_zone] += 1
+
+    with open("tract_flood_risk.csv", mode='w') as output:
+        output.write("fips, zone 1, zone 2, zone 3, zone 4, zone 5\n")
+        for fips, value in flood_zones_tracts.items():
+            if (value.total() > 0):
+                output.write("%d, " % fips)
+                for i in range(1, 6):
+                    if (i not in set(value)):
+                        num = 0
+                    else:
+                        num = value[i]
+
+                    output.write("%d, " % num)
+                try:
+                    county_id = str(fips)[2:5]
+                    tract_id = str(fips)[5:]
+                    area = get_row(county_id, tract_id)["AREA_SQMI"]
+                    print(county_id, tract_id)
+
+                    output.write("%f, " % area)
+                except Exception:
+                    pass
+
+                output.write("\n")
 
 
 if __name__ == "__main__":
-    gen_image()
+    get_tract_stats()
