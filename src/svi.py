@@ -1,54 +1,36 @@
 # api for cdc social vulnerability index
 
+from collections import Counter
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
+import numpy as np
 
 data = pd.read_csv("raw/CDC SVI/Florida.csv")
 
+unique_counties = sorted(list(set(data['COUNTY'])))
 
-'''
-HBURD Housing cost-burdened occupied housing units with annual income less than $75,000 
-DISABL Percentage of civilian noninstitutionalized population with a disability
-MUNIT Housing in structures with 10 or more units
-MOBILE Mobile homes
-CROWD At household level (occupied housing units), more people than rooms
-NOVEH Households with no vehicle available
-GROUPQ Persons in group quarters estimate
-'''
+print(unique_counties)
 
-
-def get_row(county_id: str, tract_id: str):
-    fips = int("12" + county_id + tract_id)  # 12 is florida
-    rows = data[data['FIPS'] == fips]
-
-    if (len(rows) == 0):
-        raise Exception("No rows found.")
-    elif (len(rows) > 1):
-        raise Exception("Multiple rows found.")
-    return rows.iloc[0]
-
-
-def get_metric(county_id: str, tract_id: str, metric: str, percentile=False):
-    """Returns metric in census tract
-
-    Args:
-        county_id (str): numerical id of county as string
-        tract_id (str): numerical id of census tract as string, only digits
-        metric (str): string representing metric to query, must be one of following:
-            HBURD Housing cost-burdened occupied housing units with annual income less than $75,000 
-            DISABL Percentage of civilian noninstitutionalized population with a disability
-            MUNIT Housing in structures with 10 or more units
-            MOBILE Mobile homes
-            CROWD At household level (occupied housing units), more people than rooms
-            NOVEH Households with no vehicle available
-            GROUPQ Persons in group quarters estimate
-        percentile (bool, optional): whether to get actual value or percentile of tract. Defaults to False.
-
-    Returns:
-        (float, float): returns percentage disability or percentile percentage disability, and percent margin of error
-    """
-    row = get_row(county_id, tract_id)
-    estimate = row["EPL_" + metric] if percentile else row['EP_' + metric]
-    return estimate,  row['MP_' + metric]
-
-
-print(get_row("069", "030702")['RPL_THEME4'])
+with open("data/svi.csv", mode="w") as svi:
+    svi.write("county, housing units, population, households, housing burden, disabled people, housing in structures with 10 or more units, mobile homes, housing units w more people than rooms, households wo vehicle, people in group quarters")
+    for county in unique_counties:
+        housing_units = data.loc[data['COUNTY'] == county, 'E_HU'].sum()
+        population = data.loc[data['COUNTY'] == county, 'E_TOTPOP'].sum()
+        households = data.loc[data['COUNTY'] == county, 'E_HH'].sum()
+        hburd = data.loc[data['COUNTY'] == county,
+                         'E_HBURD'].sum() / housing_units
+        disabl = data.loc[data['COUNTY'] == county,
+                          'E_DISABL'].sum() / population
+        munit = data.loc[data['COUNTY'] == county,
+                         'E_MUNIT'].sum() / housing_units
+        mobile = data.loc[data['COUNTY'] == county,
+                          'E_MOBILE'].sum() / housing_units
+        crowd = data.loc[data['COUNTY'] == county,
+                         'E_CROWD'].sum() / housing_units
+        noveh = data.loc[data['COUNTY'] == county,
+                         'E_NOVEH'].sum() / households
+        groupq = data.loc[data['COUNTY'] == county,
+                          'E_GROUPQ'].sum() / population
+        svi.write("%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n" % (county, housing_units,
+                  population, households, hburd, disabl, munit, mobile, crowd, noveh, groupq))
