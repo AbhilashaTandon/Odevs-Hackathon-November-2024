@@ -1,5 +1,7 @@
+
+const map = L.map('map').setView([28.5383, -81.3792], 10); // Orlando, FL
+
 function initMap() {
-    const map = L.map('map').setView([28.5383, -81.3792], 10); // Orlando, FL
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
@@ -120,7 +122,24 @@ function displayEvacuationRoutes() {
     });
 }
 
+function update_flood_map(){
+    const bounds = map.getBounds();
+    north = bounds['_northEast']['lat']
+    east = bounds['_northEast']['lng']
+    south = bounds['_southWest']['lat']
+    west = bounds['_southWest']['lng']
+    console.log(north, east, south, west)
+    /*
+    Object { _southWest: {…}, _northEast: {…} }
+​
+_northEast: Object { lat: 29.945415337104453, lng: -81.31153785145584 }
+​
+_southWest: Object { lat: 27.537500308359487, lng: -85.82691871083085 }
+*/
+}
+
 document.addEventListener('DOMContentLoaded', initMap);
+document.getElementById("map").addEventListener("click",update_flood_map);
 
 
 

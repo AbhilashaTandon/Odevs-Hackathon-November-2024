@@ -28,29 +28,27 @@ app.get("/info", async (res, req) => {
   //   .then((json) => {console.log(json)})
   //   .catch((err) => console.error("error:" + err));
 
-
   try {
     let response = await fetch(url, options);
     const data = await response.json();
-    const city = data.result.input.address.city
-    const geoInfo = data.result.addressMatches[0].geographies["Census Block Groups"][0]
-    const tract = geoInfo["TRACT"] 
+    const city = data.result.input.address.city;
+    const geoInfo =
+      data.result.addressMatches[0].geographies["Census Block Groups"][0];
+    const tract = geoInfo["TRACT"];
 
-    console.log(`city is: ${city}`)
-    console.log(`tract is: ${tract}`)
+    console.log(`city is: ${city}`);
+    console.log(`tract is: ${tract}`);
     // console.log(`data is: ${JSON.stringify(data)}`)
 
     const tractInfo = {
       tract: tract,
-
-    }
+    };
 
     res.status(200);
   } catch (err) {
     console.log(err);
     res.status(500).json({ msg: `Internal Server Error.` });
   }
-
 });
 
 app.listen(3000, () => {
