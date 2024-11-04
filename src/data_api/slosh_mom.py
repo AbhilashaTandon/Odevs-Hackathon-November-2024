@@ -111,24 +111,24 @@ def get_severity(lon: float, lat: float, lon_sample_range: float, lat_sample_ran
     return flood_risk_zone
 
 
-def get_severity_range(min_lon: float, min_lat: float, max_lon: float, max_lat: float, lon_entries: int, lat_entries: int):
+def get_severity_range(west: float, north: float, east: float, south: float, width: int, height: int):
     """Gets flood risk zone (0-5 inclusive: 0 no risk, 5 most risk) in specified rectangle with specified subdivisions
 
     Args:
-            min_lon (float): minimum longitude, left side of rectangle
-            min_lat (float): minimum latitude, top side of rectangle
-            max_lon (float): maximum longitude, right side of rectangle
-            max_lat (float): maximum latitude, bottom side of rectangle
-            lon_entries (int): number of columns
-            lat_entries (int): number of rows
+            west (float): minimum longitude, left side of rectangle
+            north (float): minimum latitude, top side of rectangle
+            east (float): maximum longitude, right side of rectangle
+            south (float): maximum latitude, bottom side of rectangle
+            width (int): number of columns
+            height (int): number of rows
     """
 
-    flood_risk_zone = np.zeros((lat_entries, lon_entries))
+    flood_risk_zone = np.zeros((height, width))
 
     for idx, category in enumerate(categories[::-1]):
         # iterate through them backwards because category 1 is most at risk, so we want to set it last so it isnt overwritten by broader maps
-        map_data = category.get_value(min_lon, min_lat,
-                                      max_lon, max_lat, lat_entries, lon_entries)
+        map_data = category.get_value(west, north,
+                                      east, south, height, width)
         # flood areas are non white pixels
 
         flood_risk_zone[map_data < 255] = idx + 1
